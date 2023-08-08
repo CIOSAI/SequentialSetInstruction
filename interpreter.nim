@@ -592,7 +592,15 @@ proc interpret*(interpreter: Interpreter, node: ArithAST): Interpretation=
       return last.getOrDefault(node.name, Interpretation(kind: ikRealSet, items: initHashSet[Interpretation]()))
     of aaAssign:
       let value = interpreter.interpret(node.operand)
-      interpreter.context[^1][node.name] = value
+      var searchFrom = interpreter.context.len - 1
+      var last = interpreter.context[searchFrom]
+      while last.hasKey(node.name) == false and searchFrom > 0:
+        searchFrom -= 1
+        last = interpreter.context[searchFrom]
+      if last.hasKey(node.name):
+        last[node.name] = value
+      else:
+        interpreter.context[^1][node.name] = value
       return Interpretation(kind: ikRealSet, items: initHashSet[Interpretation]())
     else:
       echo "unrecognized AST node: " & $node
