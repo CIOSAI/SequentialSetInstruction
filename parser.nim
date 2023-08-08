@@ -4,7 +4,7 @@ import sss
 
 type
   ArithTokenKind = enum
-    akLParen, akRParen, akLBracket, akRBracket, akRArrow, akAssign, akEnumLoop,
+    akLParen, akRParen, akLBracket, akRBracket, akRArrow, akAssign, akEnumLoop, akColon,
     akNumber, akBoolean, akBinOp, akUnOp, akIdentifier,
     akEndMark
   ArithToken = ref object
@@ -14,7 +14,7 @@ type
       of akNumber:   value: float
       of akBoolean: parity: bool
       of akBinOp, akUnOp: op: string
-      of akIdentifier: name: string
+      of akIdentifier, akColon: name: string
       of akEnumLoop: itemName, refName: string
   TokenStream* = ref object
     stream*: seq[ArithToken]
@@ -34,6 +34,7 @@ proc `$`*(a: ArithToken):string =
     of akRBracket: result = "]"
     of akRArrow: result = "->"
     of akAssign: result = "="
+    of akColon: result = ":"
     of akEnumLoop: result = "enum($1 $2)" % [a.itemName, a.refName]
     of akEndMark: result = ";"
 
@@ -60,6 +61,7 @@ grammar "token":
   lbrack   <- *Blank * '['
   rbrack   <- *Blank * ']'
   rarrow   <- *Blank * "->"
+  colon    <- *Blank * ':'
   assign   <- *Blank * '='
   delim    <- *Blank * ','
   enumloop <- *Blank * "enum"
@@ -74,12 +76,13 @@ let lexExp* = peg("exp", st: TokenStream):
   factor       <- ?unary * ( value|(lparen * exp * rparen) )
   genset       <- lbrack * ?(
                   boolean |
-                  (exp * ( booltail | listtail ))
+                  (exp * ?(colon * exp) * ( booltail | listtail ))
                 ) * rbrack
   listtail     <- *(token.delim * exp) * ?token.delim
   value        <- num|iden|genset
   
   rarrow  <- token.rarrow:  st.stream.add ArithToken(kind: akRArrow)
+  colon   <- token.colon:   st.stream.add ArithToken(kind: akColon)
   lparen  <- token.lparen:  st.stream.add ArithToken(kind: akLParen)
   rparen  <- token.rparen:  st.stream.add ArithToken(kind: akRParen)
   lbrack  <- token.lbrack:  st.stream.add ArithToken(kind: akLBracket)
@@ -147,6 +150,13 @@ proc parser*(tokens: seq[ArithToken]):tuple[ast: ArithAST, eaten: int] =
       of akAssign:
         stack.add newASTAssign(stack.pop().name)
         pos.inc
+      of akColon:
+        let prev = stack.pop()
+        if prev.kind == aaIden:
+          stack.add ArithAST(kind: aaColon, name: prev.name)
+        else:
+          raise newException(Exception, "unexpected colon")
+        pos.inc
       of akEnumLoop:
         stack.add newASTLoop(t.itemName, t.refName, stack.pop)
         pos.inc
@@ -169,6 +179,10 @@ proc parser*(tokens: seq[ArithToken]):tuple[ast: ArithAST, eaten: int] =
             if tokens[0].kind == akIdentifier:
               result.ast = newASTValue( 
                 ArithValue(kind: avDescSet, paramName: tokens[0].name, description: stack.pop)
+              )
+            elif stack[0].kind == aaColon:
+              result.ast = newASTValue( 
+                ArithValue(kind: avDescSet, paramName: stack[0].name, description: stack.pop)
               )
             else:
               echo "error: description set can't find param name"

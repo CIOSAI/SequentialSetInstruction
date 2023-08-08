@@ -220,6 +220,30 @@ proc boolop(interpreter: Interpreter, name: string): proc(l: Interpretation, r:I
     of "<>": 
       return proc(l: Interpretation, r:Interpretation): Interpretation= 
         return Interpretation(kind: ikBoolean, parity: l != r)
+    of "<":
+      return proc(l: Interpretation, r:Interpretation): Interpretation=
+        if l.kind == ikNumber and r.kind == ikNumber:
+          return Interpretation(kind: ikBoolean, parity: l.value < r.value)
+        else:
+          raise newException(Exception, "unexpected operand type for operator: " & name)
+    of ">":
+      return proc(l: Interpretation, r:Interpretation): Interpretation= 
+        if l.kind == ikNumber and r.kind == ikNumber:
+          return Interpretation(kind: ikBoolean, parity: l.value > r.value)
+        else:
+          raise newException(Exception, "unexpected operand type for operator: " & name)
+    of "<=":
+      return proc(l: Interpretation, r:Interpretation): Interpretation= 
+        if l.kind == ikNumber and r.kind == ikNumber:
+          return Interpretation(kind: ikBoolean, parity: l.value <= r.value)
+        else:
+          raise newException(Exception, "unexpected operand type for operator: " & name)
+    of ">=":
+      return proc(l: Interpretation, r:Interpretation): Interpretation= 
+        if l.kind == ikNumber and r.kind == ikNumber:
+          return Interpretation(kind: ikBoolean, parity: l.value >= r.value)
+        else:
+          raise newException(Exception, "unexpected operand type for operator: " & name)
     of "in":
       return proc(l: Interpretation, r:Interpretation): Interpretation= 
         case r.kind:
@@ -290,6 +314,21 @@ proc funcop(interpreter: Interpreter, name: string):
             else:
               raise newException(Exception, "sum() cannot be applied to a set of non-numbers")
           return Interpretation(kind: ikNumber, value: num)
+    of "mod":
+      return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
+        case operand.kind:
+          of ikNumber:
+            return Interpretation(kind: ikNumber, value: float(int(operand.value) mod int(config[0].value)))
+          of ikRealSet:
+            var collect:seq[Interpretation]
+            for i in operand.items:
+              if i.kind == ikNumber:
+                collect.add Interpretation(kind: ikNumber, value: float(int(i.value) mod int(config[0].value)))
+              else:
+                raise newException(Exception, "mod() can only be applied to a set of just numbers or a single number")
+            return Interpretation(kind: ikRealSet, items: collect.toHashSet)
+          else:
+            raise newException(Exception, "mod() can only be applied to a set of just numbers or a single number")
     of "comb":
       return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
         var target = operand.coerceToSet()

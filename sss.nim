@@ -13,14 +13,15 @@ type
       of avRealset: items*: seq[ArithAST]
   ArithASTKind* = enum
     aaValue, aaIden, aaBoolean,
-    aaCall, aaBinOp, aaUnOp, aaBoolOp, aaAssign, aaLoop, aaBlock
+    aaCall, aaBinOp, aaUnOp, aaBoolOp, aaAssign, aaColon,
+    aaLoop, aaBlock
   ArithAST* = ref object
     op*: string #aaCall, aaBinOp, aaUnOp, aaBoolOp
     operand*: ArithAST #aaCall, aaUnOp, aaAssign, aaLoop
     scope*: seq[ArithAST] #aaBlock, aaLoop
     case kind*: ArithASTKind
       of aaValue: value*: ArithValue
-      of aaIden, aaAssign: name*: string
+      of aaIden, aaAssign, aaColon: name*: string
       of aaLoop: itemName*, refName*: string
       of aaBoolean: parity*: bool
       of aaCall: 
@@ -62,6 +63,7 @@ proc `$`*(a: ArithAST): string =
     of aaUnOp: result = $a.op & $a.operand
     of aaBoolOp: result = "($1 $2 $3)" % [$a.left, $a.op, $a.right]
     of aaAssign: result = "$1 = $2" % [$a.name, $a.operand]
+    of aaColon: result = $a.name & ":"
     of aaLoop: result = "loop($1 in $2 : $3)" % [$a.itemName, $a.operand, $a.refName]
     of aaBlock: result = "block($1)" % [$a.scope.mapIt($it).join(", ")]
 
