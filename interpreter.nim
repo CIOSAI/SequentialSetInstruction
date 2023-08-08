@@ -1,5 +1,5 @@
 import hashes, sets, strutils, tables
-import std/sequtils
+import sequtils, math
 import sss
 
 type
@@ -303,7 +303,7 @@ proc funcop(interpreter: Interpreter, name: string):
   case name:
     of "sum":
       return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
-        var target = operand.coerceToSet()
+        let target = operand.coerceToSet()
         if target.kind == ikDescSet:
           raise newException(Exception, "sum() cannot be applied to a description set")
         else:
@@ -314,6 +314,43 @@ proc funcop(interpreter: Interpreter, name: string):
             else:
               raise newException(Exception, "sum() cannot be applied to a set of non-numbers")
           return Interpretation(kind: ikNumber, value: num)
+    of "min":
+      return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
+        let target = operand.coerceToSet()
+        if target.kind == ikDescSet:
+          raise newException(Exception, "min() cannot be applied to a description set")
+        else:
+          if target.items.len == 0:
+            raise newException(Exception, "min() cannot be applied to an empty set")
+          var num:float = 0.0
+          for i in target.items:
+            if i.kind == ikNumber:
+              num = min(num, i.value)
+            else:
+              raise newException(Exception, "min() cannot be applied to a set of non-numbers")
+          return Interpretation(kind: ikNumber, value: num)
+    of "max":
+      return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
+        let target = operand.coerceToSet()
+        if target.kind == ikDescSet:
+          raise newException(Exception, "max() cannot be applied to a description set")
+        else:
+          if target.items.len == 0:
+            raise newException(Exception, "max() cannot be applied to an empty set")
+          var num:float = 0.0
+          for i in target.items:
+            if i.kind == ikNumber:
+              num = max(num, i.value)
+            else:
+              raise newException(Exception, "max() cannot be applied to a set of non-numbers")
+          return Interpretation(kind: ikNumber, value: num)
+    of "count":
+      return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
+        let target = operand.coerceToSet()
+        if target.kind == ikDescSet:
+          raise newException(Exception, "count() cannot be applied to a description set")
+        else:
+          return Interpretation(kind: ikNumber, value: float(target.items.len))
     of "mod":
       return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
         case operand.kind:
@@ -329,9 +366,99 @@ proc funcop(interpreter: Interpreter, name: string):
             return Interpretation(kind: ikRealSet, items: collect.toHashSet)
           else:
             raise newException(Exception, "mod() can only be applied to a set of just numbers or a single number")
+    of "scale":
+      return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
+        case operand.kind:
+          of ikNumber:
+            return Interpretation(kind: ikNumber, value: operand.value * config[0].value)
+          of ikRealSet:
+            var collect:seq[Interpretation]
+            for i in operand.items:
+              if i.kind == ikNumber:
+                collect.add Interpretation(kind: ikNumber, value: i.value * config[0].value)
+              else:
+                raise newException(Exception, "scale() can only be applied to a set of just numbers or a single number")
+            return Interpretation(kind: ikRealSet, items: collect.toHashSet)
+          else:
+            raise newException(Exception, "scale() can only be applied to a set of just numbers or a single number")
+    of "div":
+      return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
+        case operand.kind:
+          of ikNumber:
+            return Interpretation(kind: ikNumber, value: operand.value / config[0].value)
+          of ikRealSet:
+            var collect:seq[Interpretation]
+            for i in operand.items:
+              if i.kind == ikNumber:
+                collect.add Interpretation(kind: ikNumber, value: i.value / config[0].value)
+              else:
+                raise newException(Exception, "scale() can only be applied to a set of just numbers or a single number")
+            return Interpretation(kind: ikRealSet, items: collect.toHashSet)
+          else:
+            raise newException(Exception, "scale() can only be applied to a set of just numbers or a single number")
+    of "pow":
+      return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
+        case operand.kind:
+          of ikNumber:
+            return Interpretation(kind: ikNumber, value: operand.value.pow(config[0].value))
+          of ikRealSet:
+            var collect:seq[Interpretation]
+            for i in operand.items:
+              if i.kind == ikNumber:
+                collect.add Interpretation(kind: ikNumber, value: i.value.pow(config[0].value))
+              else:
+                raise newException(Exception, "pow() can only be applied to a set of just numbers or a single number")
+            return Interpretation(kind: ikRealSet, items: collect.toHashSet)
+          else:
+            raise newException(Exception, "pow() can only be applied to a set of just numbers or a single number")
+    of "offset":
+      return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
+        case operand.kind:
+          of ikNumber:
+            return Interpretation(kind: ikNumber, value: operand.value + config[0].value)
+          of ikRealSet:
+            var collect:seq[Interpretation]
+            for i in operand.items:
+              if i.kind == ikNumber:
+                collect.add Interpretation(kind: ikNumber, value: i.value + config[0].value)
+              else:
+                raise newException(Exception, "offset() can only be applied to a set of just numbers or a single number")
+            return Interpretation(kind: ikRealSet, items: collect.toHashSet)
+          else:
+            raise newException(Exception, "offset() can only be applied to a set of just numbers or a single number")
+    of "abs":
+      return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
+        case operand.kind:
+          of ikNumber:
+            return Interpretation(kind: ikNumber, value: operand.value.abs)
+          of ikRealSet:
+            var collect:seq[Interpretation]
+            for i in operand.items:
+              if i.kind == ikNumber:
+                collect.add Interpretation(kind: ikNumber, value: i.value.abs)
+              else:
+                raise newException(Exception, "abs() can only be applied to a set of just numbers or a single number")
+            return Interpretation(kind: ikRealSet, items: collect.toHashSet)
+          else:
+            raise newException(Exception, "abs() can only be applied to a set of just numbers or a single number")
+    of "floor":
+      return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
+        case operand.kind:
+          of ikNumber:
+            return Interpretation(kind: ikNumber, value: operand.value.floor)
+          of ikRealSet:
+            var collect:seq[Interpretation]
+            for i in operand.items:
+              if i.kind == ikNumber:
+                collect.add Interpretation(kind: ikNumber, value: i.value.floor)
+              else:
+                raise newException(Exception, "floor() can only be applied to a set of just numbers or a single number")
+            return Interpretation(kind: ikRealSet, items: collect.toHashSet)
+          else:
+            raise newException(Exception, "floor() can only be applied to a set of just numbers or a single number")
     of "comb":
       return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
-        var target = operand.coerceToSet()
+        let target = operand.coerceToSet()
         if target.kind == ikDescSet:
           raise newException(Exception, "comb() cannot be applied to a description set")
         else:
@@ -353,6 +480,20 @@ proc funcop(interpreter: Interpreter, name: string):
             for i in repeatedPermutations(target.items.toSeq(), config[0].value.toInt):
               combinations.incl(Interpretation(kind: ikRealSet, items: i.toHashSet()))
             return Interpretation(kind: ikRealSet, items: combinations)
+    of "realize":
+      return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
+        let target = operand.coerceToDescSet()
+        if config[0].kind == ikNumber and config[1].kind == ikNumber:
+          let higher = if config[0].value > config[1].value : config[0].value else : config[1].value
+          let lower = if config[0].value < config[1].value : config[0].value else : config[1].value
+          var collect:seq[Interpretation]
+          for i in int(lower)..int(higher)-1:
+            collect.add Interpretation(kind: ikNumber, value: float(i))
+          var dump = HashSet[Interpretation]()
+          interpreter.setRealize(Interpretation(kind: ikRealSet, items: collect.toHashSet), target, dump)
+          return Interpretation(kind: ikRealSet, items: dump)
+        else:
+          raise newException(Exception, "realize() requires two numbers as arguments")
     of "collapse":
       return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
         case operand.kind:
@@ -371,6 +512,12 @@ proc funcop(interpreter: Interpreter, name: string):
     of "print":
       return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
         echo operand
+        return Interpretation(kind: ikRealSet, items: initHashSet[Interpretation]())
+    of "text":
+      return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
+        if operand.kind != ikNumber:
+          raise newException(Exception, "text() only works on single number")
+        echo int(operand.value).chr
         return Interpretation(kind: ikRealSet, items: initHashSet[Interpretation]())
     else:
       raise newException(Exception, "unexpected function: " & name)
