@@ -180,6 +180,10 @@ proc parser*(tokens: seq[ArithToken]):tuple[ast: ArithAST, eaten: int] =
               result.ast = newASTValue( 
                 ArithValue(kind: avDescSet, paramName: tokens[0].name, description: stack.pop)
               )
+            elif tokens[0].kind == akBoolean:
+              result.ast = newASTValue( 
+                ArithValue(kind: avDescSet, paramName: "", description: stack.pop)
+              )
             elif stack[0].kind == aaColon:
               result.ast = newASTValue( 
                 ArithValue(kind: avDescSet, paramName: stack[0].name, description: stack.pop)
