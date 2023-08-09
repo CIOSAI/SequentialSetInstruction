@@ -48,34 +48,37 @@ input enum(i, set)
     set = 1 & input
 ```
 
-### Hello World (doesn't work yet)
+### Hello World
 
 ```
-array = [1, [2, [3, []]]]
+# by wrapping the next element in [nextItem, nextNext]
+# we can distinguish this item from the next by checking
+# the amount of elements in them
+array = [104, [101, [108, [108, [111, [32, [119, [111, [114, [108, [100, []]]]]]]]]]]]
 
-flag = []
+# yes, this is a fucked up hack
 
-array enum(i, set)
-    hasNext = 2 & flag->count
-    isEmpty = [flag] & [$->count==0]
-    isOne = [flag] & [$->count==1]
-    isItem = 1 & i->count
-    isNext = [0, 2] & i->count
+array enum(item, ref)
 
-    isItem enum(j)
-        isEmpty enum(k)
-            flag = [1]
-            i -> text
-        hasNext enum(l)
-            flag = []
-            i -> text
-            set = flag
-    isNext enum(m)
-        isEmpty enum(n)
-            flag = i
-        isOne enum(o)
-            flag = []
-            set = i
+    # [1] intersection amount of item in item
+    # its either [numer, set], [] or number
+    1 & item->count enum(j)
+
+        # if there's a [1] in the intersection, this part would execute
+        item -> text
+
+    # this detects that it's the [numer, set] or [] cases
+    [0, 2] & item->count enum(k)
+
+        # since the current element (the next) is popped out of the set
+        # this leaves the current value in ref
+        # unpack it or don't print if there's nothing left
+        ref enum(l)
+            l -> text
+
+        # this part puts the [nextEle, nextNextSet] set into ref
+        # for the next iteration
+        ref = item
 ```
 
 ## Documents
