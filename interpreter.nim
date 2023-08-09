@@ -482,7 +482,9 @@ proc funcop(interpreter: Interpreter, name: string):
             return Interpretation(kind: ikRealSet, items: combinations)
     of "realize":
       return proc(operand: Interpretation, config:seq[Interpretation]): Interpretation= 
-        let target = operand.coerceToDescSet()
+        let target = 
+          if operand.kind != ikDescSet: operand.coerceToSet().coerceToDescSet() 
+          else: operand
         if config[0].kind == ikNumber and config[1].kind == ikNumber:
           let higher = if config[0].value > config[1].value : config[0].value else : config[1].value
           let lower = if config[0].value < config[1].value : config[0].value else : config[1].value
