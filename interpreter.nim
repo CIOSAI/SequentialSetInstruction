@@ -504,7 +504,7 @@ proc funcop(interpreter: Interpreter, name: string):
               return operand
             else:
               var target = operand
-              while target.items.len == 1:
+              while target.kind == ikRealset and target.items.len == 1:
                 target = target.items.toSeq()[0]
               return target
           else:
@@ -535,9 +535,12 @@ proc interpret*(interpreter: Interpreter, node: ArithAST): Interpretation=
       if loopOver.kind == ikDescSet:
         raise newException(Exception, "loop cannot be applied to a description set")
       
+      var copy:Interpretation
+      copy.deepCopy(loopOver)
+
       interpreter.context.push({
         node.itemName: Interpretation(kind: ikRealSet, items: initHashSet[Interpretation]()),
-        (if node.refName=="": "<loop>" else: node.refName): loopOver
+        (if node.refName=="": "<loop>" else: node.refName): copy
       }.toTable)
 
       proc getLooper():Interpretation =
@@ -545,8 +548,10 @@ proc interpret*(interpreter: Interpreter, node: ArithAST): Interpretation=
           Interpretation(kind: ikRealSet, items: initHashSet[Interpretation]())
         )
       
-      while getLooper().items.len > 0:
+      while true:
+        if getLooper().items.len == 0: break
         interpreter.context[^1][node.itemName] = getLooper().items.pop()
+        interpreter.context[^1][node.refName] = getLooper()
         for line in node.scope:
           discard interpreter.interpret(line)
       
@@ -598,7 +603,7 @@ proc interpret*(interpreter: Interpreter, node: ArithAST): Interpretation=
         searchFrom -= 1
         last = interpreter.context[searchFrom]
       if last.hasKey(node.name):
-        last[node.name] = value
+        interpreter.context[searchFrom][node.name] = value
       else:
         interpreter.context[^1][node.name] = value
       return Interpretation(kind: ikRealSet, items: initHashSet[Interpretation]())
