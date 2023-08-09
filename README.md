@@ -1,6 +1,6 @@
 # Sequential Set Instruction
 
-A set-based esoteric programming language made with Nim
+A set-based esoteric programming language made with Nim & [npeg](https://github.com/zevv/npeg)
 
 ## How to use
 
@@ -61,13 +61,13 @@ array = [104, [101, [108, [108, [111, [32, [119, [111, [114, [108, [100, []]]]]]
 array enum(item, ref)
 
     # [1] intersection amount of item in item
-    # its either [numer, set], [] or number
+    # its either [nextItem, nextNext], [] or number
     1 & item->count enum(j)
 
         # if there's a [1] in the intersection, this part would execute
         item -> text
 
-    # this detects that it's the [numer, set] or [] cases
+    # this detects that it's the [number, set] or [] cases
     [0, 2] & item->count enum(k)
 
         # since the current element (the next) is popped out of the set
@@ -76,7 +76,7 @@ array enum(item, ref)
         ref enum(l)
             l -> text
 
-        # this part puts the [nextEle, nextNextSet] set into ref
+        # this part puts the [nextItem, nextNext] set into ref
         # for the next iteration
         ref = item
 ```
