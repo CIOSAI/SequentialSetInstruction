@@ -7,8 +7,11 @@ A set-based esoteric programming language made with Nim & [npeg](https://github.
 ### Run SSS code
 
 1. Clone this repo
-2. Compile `desktopEnter.nim` with this command `nim c -d:release -o:whateverName.exe desktopEnter.nim` (you need to have Nim installed in your path)
-3. Run the exe with path to the file you want to execute (for example `sss.exe C:\Documents\sss\twosums.sss`)
+2. Install Nim if you don't have it
+3. Install the `npeg` package at https://github.com/zevv/npeg
+4. The compiler might complain asking you to turn on deepcopy, put `--deepcopy:on` in the command mentioned at next step if it does
+5. Compile `desktopEnter.nim` with this command `nim c -d:release -o:whateverName.exe desktopEnter.nim` (you need to have `nim` in your path)
+6. Run the exe with path to the file you want to execute (for example `sss.exe C:\Documents\sss\twosums.sss`)
 
 ### Compile to other targets
 
